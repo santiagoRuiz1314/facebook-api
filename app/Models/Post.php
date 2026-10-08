@@ -6,5 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
-    //
+    protected $fillable = ['title', 'content', 'likes_count'];
+
+    public function images()
+    {
+        return $this->hasMany(PostImage::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }
