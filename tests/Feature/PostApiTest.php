@@ -153,4 +153,46 @@ class PostApiTest extends TestCase
             ->assertStatus(404)
             ->assertExactJson(['message' => 'Recurso no encontrado']);
     }
+
+    public function test_crear_publicacion_con_images_vacio_devuelve_422(): void
+    {
+        $this->postJson('/api/posts', [
+            'title'   => 'Post',
+            'content' => 'Contenido',
+            'images'  => [],
+        ])->assertStatus(422)->assertJsonValidationErrors(['images']);
+
+        $this->assertDatabaseCount('posts', 0);
+    }
+
+    public function test_crear_publicacion_con_campo_images_sin_archivo_devuelve_422(): void
+    {
+        // Así llega a PHP un campo images[] de form-data sin archivo seleccionado
+        $_FILES['images'] = [
+            'name'     => [''],
+            'type'     => [''],
+            'tmp_name' => [''],
+            'error'    => [UPLOAD_ERR_NO_FILE],
+            'size'     => [0],
+        ];
+
+        try {
+            $this->postJson('/api/posts', [
+                'title'   => 'Post',
+                'content' => 'Contenido',
+            ])->assertStatus(422)->assertJsonValidationErrors(['images']);
+        } finally {
+            unset($_FILES['images']);
+        }
+
+        $this->assertDatabaseCount('posts', 0);
+    }
+
+    public function test_crear_publicacion_sin_campo_images_devuelve_201(): void
+    {
+        $this->postJson('/api/posts', [
+            'title'   => 'Post sin fotos',
+            'content' => 'Contenido',
+        ])->assertStatus(201)->assertJsonCount(0, 'images');
+    }
 }

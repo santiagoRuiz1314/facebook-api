@@ -66,7 +66,7 @@ Todas las rutas usan el prefijo `/api`. Se recomienda enviar el header `Accept: 
 
 Errores:
 - **404**: el post no existe. Responde `{"message": "Recurso no encontrado"}`.
-- **422**: falla la validación (falta el título o el contenido, el archivo no es una imagen, `images` no es un arreglo, una imagen pesa más de 2 MB). Responde con el detalle en `errors`.
+- **422**: falla la validación (falta el título o el contenido, el archivo no es una imagen, `images` no es un arreglo o llegó vacío, una imagen pesa más de 2 MB). Responde con el detalle en `errors`.
 
 Cada imagen se guarda en `storage/app/public/posts` y se devuelve con su `image_url` completa, por ejemplo `http://127.0.0.1:8000/storage/posts/abc.jpg`.
 

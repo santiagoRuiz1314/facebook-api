@@ -6,6 +6,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Throwable;
 
 class PostController extends Controller
@@ -28,12 +29,26 @@ class PostController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $mensajeImagesVacio = 'El campo images[] llegó vacío: adjunta al menos un archivo o no envíes el campo.';
+
+        $validator = Validator::make($request->all(), [
             'title'    => 'required|string|max:255',
             'content'  => 'required|string',
-            'images'   => 'nullable|array|max:10',
+            'images'   => 'sometimes|required|array|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'images.required' => $mensajeImagesVacio,
         ]);
+
+        // PHP marca los campos images[] enviados sin archivo con UPLOAD_ERR_NO_FILE
+        // y Laravel los descarta antes de validar, por eso se revisa $_FILES.
+        $validator->after(function ($validator) use ($request, $mensajeImagesVacio) {
+            if (isset($_FILES['images']) && ! $request->hasFile('images')) {
+                $validator->errors()->add('images', $mensajeImagesVacio);
+            }
+        });
+
+        $validator->validate();
 
         $storedPaths = [];
 
