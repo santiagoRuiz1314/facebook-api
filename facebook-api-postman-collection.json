@@ -1,0 +1,280 @@
+{
+    "info": {
+        "name": "Facebook API - Taller Backend",
+        "description": "Colección de pruebas para la API REST tipo Facebook (Laravel). Ejecutar en orden: crear → listar → ver → comentar → like → eliminar.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Crear publicación con imágenes",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                            "const post = pm.response.json();",
+                            "pm.test('Devuelve el post con sus imágenes', () => {",
+                            "    pm.expect(post).to.have.property('id');",
+                            "    pm.expect(post.images).to.be.an('array');",
+                            "});",
+                            "pm.collectionVariables.set('post_id', post.id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "title",
+                            "value": "Mi primera publicación",
+                            "type": "text"
+                        },
+                        {
+                            "key": "content",
+                            "value": "Hola a todos, comparto fotos de mi viaje.",
+                            "type": "text"
+                        },
+                        {
+                            "key": "images[]",
+                            "type": "file",
+                            "src": [],
+                            "description": "Selecciona foto 1"
+                        },
+                        {
+                            "key": "images[]",
+                            "type": "file",
+                            "src": [],
+                            "description": "Selecciona foto 2"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/posts",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "posts"
+                    ]
+                },
+                "description": "Crea un post y guarda las imágenes en storage/app/public/posts. Selecciona los archivos en los campos images[] antes de enviar."
+            }
+        },
+        {
+            "name": "Listar publicaciones",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                            "pm.test('Devuelve un array de posts', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/posts",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "posts"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Ver publicación",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                            "pm.test('Incluye imágenes y comentarios', () => {",
+                            "    const post = pm.response.json();",
+                            "    pm.expect(post).to.have.property('images');",
+                            "    pm.expect(post).to.have.property('comments');",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/posts/{{post_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "posts",
+                        "{{post_id}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Agregar comentario",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                            "pm.test('El comentario pertenece al post', () => {",
+                            "    pm.expect(pm.response.json().post_id).to.eql(Number(pm.collectionVariables.get('post_id')));",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"author\": \"Carlos Gómez\",\n    \"content\": \"¡Qué buenas fotos!\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/posts/{{post_id}}/comments",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "posts",
+                        "{{post_id}}",
+                        "comments"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Dar like a publicación",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                            "pm.test('Devuelve likes_count', () => pm.expect(pm.response.json().likes_count).to.be.above(0));"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/posts/{{post_id}}/like",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "posts",
+                        "{{post_id}}",
+                        "like"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Eliminar publicación",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/posts/{{post_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "posts",
+                        "{{post_id}}"
+                    ]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000"
+        },
+        {
+            "key": "post_id",
+            "value": "1"
+        }
+    ]
+}
