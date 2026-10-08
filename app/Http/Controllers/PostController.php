@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
-use App\Models\PostImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class PostController extends Controller
 {
@@ -13,14 +14,7 @@ class PostController extends Controller
     {
         $posts = Post::with(['images', 'comments'])
             ->latest()
-            ->get()
-            ->map(function ($post) {
-                $post->images->transform(function ($img) {
-                    $img->image_url = asset('storage/' . $img->image_path);
-                    return $img;
-                });
-                return $post;
-            });
+            ->get();
 
         return response()->json($posts, 200);
     }
@@ -28,10 +22,7 @@ class PostController extends Controller
     public function show($id)
     {
         $post = Post::with(['images', 'comments'])->findOrFail($id);
-        $post->images->transform(function ($img) {
-            $img->image_url = asset('storage/' . $img->image_path);
-            return $img;
-        });
+
         return response()->json($post, 200);
     }
 
@@ -40,22 +31,31 @@ class PostController extends Controller
         $request->validate([
             'title'    => 'required|string|max:255',
             'content'  => 'required|string',
+            'images'   => 'nullable|array|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $post = Post::create([
-            'title'   => $request->title,
-            'content' => $request->content,
-        ]);
+        $storedPaths = [];
 
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $file) {
-                $path = $file->store('posts', 'public');
-                PostImage::create([
-                    'post_id'    => $post->id,
-                    'image_path' => $path,
+        try {
+            $post = DB::transaction(function () use ($request, &$storedPaths) {
+                $post = Post::create([
+                    'title'   => $request->title,
+                    'content' => $request->content,
                 ]);
-            }
+
+                foreach ($request->file('images', []) as $file) {
+                    $path = $file->store('posts', 'public');
+                    $storedPaths[] = $path;
+                    $post->images()->create(['image_path' => $path]);
+                }
+
+                return $post;
+            });
+        } catch (Throwable $e) {
+            // Si algo falla, no dejar archivos huérfanos en el storage
+            Storage::disk('public')->delete($storedPaths);
+            throw $e;
         }
 
         return response()->json($post->load('images'), 201);
@@ -76,9 +76,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
 
-        foreach ($post->images as $image) {
-            Storage::disk('public')->delete($image->image_path);
-        }
+        Storage::disk('public')->delete($post->images->pluck('image_path')->all());
 
         $post->delete();
         return response()->json(null, 204);

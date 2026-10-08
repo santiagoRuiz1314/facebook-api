@@ -128,4 +128,29 @@ class PostApiTest extends TestCase
     {
         $this->deleteJson('/api/posts/999')->assertStatus(404);
     }
+
+    public function test_crear_publicacion_devuelve_image_url_completa(): void
+    {
+        $post = $this->crearPostConImagenes();
+
+        foreach ($post['images'] as $image) {
+            $this->assertSame(asset('storage/' . $image['image_path']), $image['image_url']);
+        }
+    }
+
+    public function test_crear_publicacion_con_images_que_no_es_arreglo_devuelve_422(): void
+    {
+        $this->postJson('/api/posts', [
+            'title'   => 'Post',
+            'content' => 'Contenido',
+            'images'  => 'no-es-un-arreglo',
+        ])->assertStatus(422)->assertJsonValidationErrors(['images']);
+    }
+
+    public function test_publicacion_inexistente_devuelve_404_json_sin_header_accept(): void
+    {
+        $this->get('/api/posts/999')
+            ->assertStatus(404)
+            ->assertExactJson(['message' => 'Recurso no encontrado']);
+    }
 }
