@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -21,10 +22,19 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        // Respuesta 404 limpia para la API (sin stack trace)
+        // Respuesta 404 limpia para la API (sin stack trace), indicando si falta
+        // la publicación o si la ruta no existe
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
-            if ($request->is('api/*')) {
-                return response()->json(['message' => 'Recurso no encontrado'], 404);
+            if (! $request->is('api/*')) {
+                return null;
             }
+
+            if ($e->getPrevious() instanceof ModelNotFoundException) {
+                return response()->json(['message' => 'Publicación no encontrada'], 404);
+            }
+
+            return response()->json([
+                'message' => "La ruta {$request->method()} /{$request->path()} no existe",
+            ], 404);
         });
     })->create();

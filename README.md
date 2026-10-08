@@ -65,7 +65,7 @@ Todas las rutas usan el prefijo `/api`. Se recomienda enviar el header `Accept: 
 | DELETE | `/api/posts/{id}` | application/json | Eliminar un post y sus imágenes | — | 204 |
 
 Errores:
-- **404**: el post no existe. Responde `{"message": "Recurso no encontrado"}`.
+- **404**: el post no existe (`{"message": "Publicación no encontrada"}`) o la ruta está mal escrita (`{"message": "La ruta POST /api/post no existe"}`).
 - **422**: falla la validación (falta el título o el contenido, el archivo no es una imagen, `images` no es un arreglo o llegó vacío, una imagen pesa más de 2 MB). Responde con el detalle en `errors`.
 
 Cada imagen se guarda en `storage/app/public/posts` y se devuelve con su `image_url` completa, por ejemplo `http://127.0.0.1:8000/storage/posts/abc.jpg`.

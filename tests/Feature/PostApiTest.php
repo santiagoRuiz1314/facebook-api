@@ -151,7 +151,14 @@ class PostApiTest extends TestCase
     {
         $this->get('/api/posts/999')
             ->assertStatus(404)
-            ->assertExactJson(['message' => 'Recurso no encontrado']);
+            ->assertExactJson(['message' => 'Publicación no encontrada']);
+    }
+
+    public function test_ruta_inexistente_devuelve_404_indicando_la_ruta(): void
+    {
+        $this->postJson('/api/post', ['title' => 'Post', 'content' => 'Contenido'])
+            ->assertStatus(404)
+            ->assertExactJson(['message' => 'La ruta POST /api/post no existe']);
     }
 
     public function test_crear_publicacion_con_images_vacio_devuelve_422(): void
